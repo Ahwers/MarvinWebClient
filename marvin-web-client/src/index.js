@@ -12,36 +12,75 @@ class MarvinClient extends React.Component {
 
     recieveCommand() {
         var command = this.listenToVoiceCommand();
-        var marvinResponse = this.commandMarvin(command);
-
-        this.setState({
-            currentApplicationCode: marvinResponse.applicationCode,
-        });
+        this.commandMarvin(command);
     }
 
     // TODO: Implement
     listenToVoiceCommand() {
+        const command = "who am i";
+        this.setState({ commandText: command });
 
+        return command;
     }
 
-    // TODO: Implement
-    commandMarvin() {
-        const code = "<html><head><title>Like Button</title></head><body><div id='like_button_container'></div><script src='https://unpkg.com/react@17/umd/react.development.js' crossorigin></script><script src='https://unpkg.com/react-dom@17/umd/react-dom.development.js' crossorigin></script><script src='https://unpkg.com/babel-standalone@6/babel.min.js'></script><script type='text/babel'>class LikeButton extends React.Component {constructor(props) {super(props);this.state = {liked: false};}render() {if (this.state.liked) {return 'You liked this.';}return (<button onClick={() => this.setState({ liked: true })}>Like</button>);}}const e = React.createElement;const domContainer = document.querySelector('#like_button_container');ReactDOM.render(e(LikeButton), domContainer);</script></body></html>";
-        var response = {
-            applicationCode: code,
-        };
+    commandMarvin(command) {
+        var client = this;
 
-        return response;
+        var httpRequest = new XMLHttpRequest();
+        httpRequest.open("POST", "http://127.0.0.1:8080/MarvinService/service/command", true);
+        httpRequest.setRequestHeader("Content-Type", "application/json");
+        httpRequest.setRequestHeader("Authorization", "Bearer bearer");
+        httpRequest.onreadystatechange = function() {
+            if ((httpRequest.readyState === XMLHttpRequest.DONE) && (httpRequest.status === 200)) {
+                const marvinResponse = JSON.parse(httpRequest.responseText);
+                client.processMarvinResponse(marvinResponse);
+            }
+        };
+        var data = { command: command };
+        httpRequest.send(JSON.stringify(data));
+    }
+
+    // TODO: Toast message or have Marvin read out the resource.message
+    processMarvinResponse(marvinResponse) {
+        const resource = marvinResponse.resource;
+        if (resource) {
+            const resourceType = resource.type;
+            // TODO: Save plain text application as html file and load that. Then we can do styles and that
+            if (resourceType === "PLAIN_TEXT") {
+                this.setState(
+                    {
+                        currentApplicationCode: this.getPlainTextDisplayApplicationCode(),
+                    },
+                    () => {
+                        var applicationIframe = document.getElementById('application_iframe');
+                        applicationIframe.addEventListener("load", () => {
+                            var textDisplay = applicationIframe.contentWindow.document.getElementById("text_display");
+                            textDisplay.innerHTML = resource.content;
+                        });
+                    }
+                );
+            }
+            else if (resourceType === "HTML_APPLICATION_INTERFACE") {
+                this.setState({
+                    currentApplicationCode: resource.content,
+                });
+            }
+        }
+    }
+
+    getPlainTextDisplayApplicationCode() {
+        const code = "<html><head><title>Text Display</title></head><body><div id='text_display_container'></div><script src='https://unpkg.com/react@17/umd/react.development.js' crossorigin></script><script src='https://unpkg.com/react-dom@17/umd/react-dom.development.js' crossorigin></script><script src='https://unpkg.com/babel-standalone@6/babel.min.js'></script><script type='text/babel'>class TextDisplay extends React.Component {render() {return (<div id='text_display'>default</div>)}}const e = React.createElement;const domContainer = document.querySelector('#text_display_container');ReactDOM.render(e(TextDisplay), domContainer);</script></body></html>";
+        return code;
     }
 
     render() {
         return (
-            <div>
-                <div>
+            <div class="h-screen">
+                <div class="h-5/6">
                     <MarvinApplication code={this.state.currentApplicationCode}/>
                 </div>
-                <div>
-                    <CommandReciever onClick={() => this.recieveCommand()}/>
+                <div class="h-1/6 border-2">
+                    <CommandReciever commandText={this.state.commandText} onClick={() => this.recieveCommand()}/>
                 </div>
             </div>
         );
@@ -52,7 +91,7 @@ class MarvinClient extends React.Component {
 class MarvinApplication extends React.Component {
 
     render() {
-        return <iframe srcDoc={this.props.code}></iframe>;
+        return <iframe id="application_iframe" srcDoc={this.props.code}></iframe>;
     }
 
 }
@@ -60,7 +99,12 @@ class MarvinApplication extends React.Component {
 class CommandReciever extends React.Component {
 
     render() {
-        return <button onClick={this.props.onClick}>Command</button>;
+        return(
+            <div class="flex flex-col">
+                <p>{this.props.commandText}</p>
+                <button onClick={this.props.onClick}>Command</button>
+            </div>
+        );
     }
 
 }
