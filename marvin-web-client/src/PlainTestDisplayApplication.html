@@ -1,0 +1,24 @@
+<html>
+    <head>
+        <title>Text Display</title>
+    </head>
+    <body>
+        <div id='text_display_container'>
+        </div>
+        <script src='https://unpkg.com/react@17/umd/react.development.js' crossorigin></script>
+        <script src='https://unpkg.com/react-dom@17/umd/react-dom.development.js' crossorigin></script>
+        <script src='https://unpkg.com/babel-standalone@6/babel.min.js'></script>
+        
+        <script type='text/babel'>
+            class TextDisplay extends React.Component {
+                render() {
+                    return (<div id='text_display'>default</div>)
+                }
+            }
+            
+            const e = React.createElement;
+            const domContainer = document.querySelector('#text_display_container');
+            ReactDOM.render(e(TextDisplay), domContainer);
+        </script>
+    </body>
+</html>

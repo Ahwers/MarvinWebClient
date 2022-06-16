@@ -1,16 +1,17 @@
 import React from 'react';
+import { SignInButton } from './SignInButton';
+import { SignOutButton } from './SignOutButton';
+import { useIsAuthenticated } from "@azure/msal-react";
 
-class CommandReciever extends React.Component {
+export const CommandReciever = (props) => {
+    const isAuthenticated = useIsAuthenticated();
 
-    render() {
-        return(
-            <div class="flex flex-col">
-                <p>{this.props.commandText}</p>
-                <button onClick={this.props.onClick}>Command</button>
-            </div>
-        );
-    }
-
-}
-
-export default CommandReciever;
+    return (
+        <div class="flex flex-col">
+            {/* TODO: Put text in middle, like allign in middle? Idk what it's called. */}
+            <p>{props.commandText}</p>
+            <button onClick={props.onClick}>Command</button>
+            { isAuthenticated ? <SignOutButton /> : <SignInButton /> }
+        </div>
+    );
+};
